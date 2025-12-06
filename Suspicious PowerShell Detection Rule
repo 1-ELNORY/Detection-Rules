@@ -22,8 +22,9 @@ detection:
       - 1         #process creation
       - 7         #image loaded
   selection2:
-    keywords:
-      - 'powershell.exe -e'
+  process name:
+      - Powershell.exe
+  command line:
       - '-e'       #Powershell encoded
       - '-en'      #Powershell encoded
       - '-enc'     #Powershell encoded
@@ -32,6 +33,7 @@ detection:
       - '-nop'     #powershell cmdlet
       - '-noni'    #powershell cmdlet
       - 'invoke-expression'    #powershell cmdlet
+      - 'Curl'      #powershell cmdlet
       - 'iex'      #powershell cmdlet
       - '.downloadstring'      #powershell cmdlet
       - 'downloadfile'         #powershell cmdlet
