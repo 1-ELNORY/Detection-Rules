@@ -1,0 +1,28 @@
+title: WMI Reconnaissance with Suspicious Parent Processes     
+description: Detects the execution of WMI commands related to user enumeration from PowerShell or Command Prompt within the last 5 minutes.  
+references:  
+  - Add references to relevant articles, blogs, or documentation.  
+tags:  
+  - attack.Reconnaissance  
+  - attack.t1047.1   
+
+logsource:  
+  service: sysmon  
+
+
+detection:  
+  selection:  
+    EventID:  
+      - 1      # Sysmon Process Creation  
+      - 4688   # Windows Process Creation  
+    CommandLine: "*wmic* user*"  
+    ParentImage:  
+      - "*PowerShell.exe*"  
+      - "*cmd.exe*"  
+  timeframe: 5m  
+  condition: selection  
+
+falsepositives:  
+  - System Admin Activity 
+
+level: high  
