@@ -1,0 +1,41 @@
+title: Detecting Malicious PowerShell
+description: Detects suspicious and malicious PowerShell activity
+references:
+  - https://redcanary.com/threat-detection-report/techniques/powershell/
+author: assassin
+date: 2023/05/04
+tags:
+  - attack.execution
+  - attack.t1059.001
+logsource:
+  product: windows
+  service: security
+detection:
+  selection1:
+    EventID: 
+      - 4688      #processCreation
+      - 4104      #Scriptblock logging event
+      - 4103      #Module loading
+      - 400       #PowerShell command-line logging events
+      - 800       #Module loading
+      - 1101      #Antimalware-Scan-Interface (AMSI)
+      - 1         #process creation
+      - 7         #image loaded
+  selection2:
+    keywords:
+      - 'powershell.exe -e'
+      - '-e'       #Powershell encoded
+      - '-en'      #Powershell encoded
+      - '-enc'     #Powershell encoded
+      - '-enco'    #Powershell encoded
+      - 'base64'   #PowerShell Base64 encoding
+      - '-nop'     #powershell cmdlet
+      - '-noni'    #powershell cmdlet
+      - 'invoke-expression'    #powershell cmdlet
+      - 'iex'      #powershell cmdlet
+      - '.downloadstring'      #powershell cmdlet
+      - 'downloadfile'         #powershell cmdlet
+condition: selection1 and selection2
+falsepositives:
+  - Legitimate administrative activities
+level: high
