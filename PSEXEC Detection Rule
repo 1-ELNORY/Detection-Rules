@@ -1,0 +1,76 @@
+title: Advanced PsExec and PAExec Lateral Movement Detection
+status: experimental
+description: |
+  Detects PsExec, PsExec64 and PAExec usage associated with lateral movement,
+  privilege escalation, rogue service creation, Sysinternals EULA acceptance,
+  and registry modifications. Combines process creation, service installation
+  and registry events for high-confidence detection.
+
+references:
+  - https://attack.mitre.org/techniques/T1569/002/
+  - https://learn.microsoft.com/sysinternals/
+author: EL Noury
+tags:
+  - attack.execution
+  - attack.t1569.002
+  - attack.lateral_movement
+logsource:
+  product: windows
+  category: process_creation
+
+detection:
+  psexec_process:
+    EventID:
+      - 1      # Sysmon Process Create
+      - 4688   # Windows Process Create
+    Image|endswith:
+      - '\PsExec.exe'
+      - '\PsExec64.exe'
+      - '\paexec.exe'
+    CommandLine|contains:
+      - '-r'              # service creation
+      - 'cmd.exe'
+      - 'powershell'
+      - 'pwsh'
+      - 'accepteula'
+    # Parent often CMD when attacker spawns shell
+    ParentImage|endswith:
+      - '\cmd.exe'
+      - '\powershell.exe'
+      - '\pwsh.exe'
+
+  # ----------------------------------------
+  # 2. Windows Service Installation Events
+  # ----------------------------------------
+  service_install:
+    EventID:
+      - 4697   # Service installed [Security Log]
+      - 7045   # New service has been installed [System Log]
+    ServiceName|contains:
+      - 'PSEXESVC'
+      - 'PAExec'
+      - 'PsExec'  
+    ImagePath|contains:
+      - 'PSEXESVC'
+      - 'PsExec'
+
+  # -------------------------------------
+  # 3. Registry Creation/Modification
+  # -------------------------------------
+  registry_events:
+    EventID:
+      - 13     # Sysmon Registry Value Set
+      - 4657   # Registry modified
+    TargetObject|contains:
+      - 'HKEY_CURRENT_USER\\Software\\Sysinternals\\PsExec'
+      - 'HKEY_CURRENT_USER\\Software\\Sysinternals'
+      - '\\EulaAccepted'
+      - 'HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Services\\PSEXESVC'
+
+  
+
+  condition: psexec_process OR service_install OR registry_events
+
+falsepositives:
+  - Legitimate use of Sysinternals PsExec by system administrators
+level: high
