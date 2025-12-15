@@ -1,0 +1,39 @@
+Title: Guest Account Enabled
+Description: Detects enabling of the Guest account and suspicious modifications like password changes and group membership additions, 
+The Guest account is disabled by default, but there have been several incidents since the actors have enabled this account. 
+Once enabled, the threat actor typically changes the password to one of their choosing and further modifies the account, 
+such as by add and Remote Desktop Users groups. This elevates the account's privileges and allows it to be used for remote access.
+
+
+logsource:
+    product: windows
+    service: security
+detection:
+    selection_account_enabled:
+        EventID: 4722
+        TargetUserName: Guest
+    selection_login_events:
+        EventID: [4624, 4625]
+        TargetUserName: Guest
+    selection_process_creation:
+        EventID: 4688
+        Image: 
+            - '*\cmd.exe'
+            - '*\powershell.exe'
+        CommandLine|contains:
+            - 'Guest'
+            - 'active:yes'
+            - 'wmic'
+            - 'passwordexpires'
+    condition: selection_account_enabled or selection_login_events or selection_process_creation
+fields:
+    - EventID
+    - TargetUserName
+    - CommandLine
+falsepositives:
+    - Legitimate administrative activity enabling Guest account
+    - Automated scripts used for system provisioning
+level: high
+tags:
+    - attack.persistence
+    - attack.t1078
