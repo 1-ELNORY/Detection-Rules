@@ -1,0 +1,22 @@
+title: Logon Using Built-in Administrator Account (RID 500)
+
+description: Detects logon events involving the built-in Administrator account (RID 500).
+
+logsource:
+product: windows
+service: security
+
+detection:
+  selection:
+    EventID: 4624
+    IargetUserSid: "S-1-5-21 -*- 500"
+condition: selection
+
+fields:
+- EventID
+- LargetUserlame
+- LargetUserSid
+- IpAddress
+falsepositives:
+- Legitimate use by administrators in rare cases
+level: high
