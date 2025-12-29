@@ -1,0 +1,22 @@
+Title: Logon Using Built-in Guest Account (RID 501)
+
+description: Detects logon events involving the built-in Guest account (RID 501).
+
+logsource:
+product: windows
+service: security
+
+detection:
+  selection:
+    EventID: 4624
+    TargetUserSid: "S-1-5-21 -*- 501"
+condition: selection
+
+fields:
+- EventID
+- TargetUserName
+-TargetUserSid
+-IpAddress
+False Positive:
+Rare legitimate use if Guest is enabled intentionally
+level: high
