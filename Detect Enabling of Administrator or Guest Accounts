@@ -1,0 +1,21 @@
+Title: Enabling Built-in Administrator or Guest Accounts
+
+Description: Detects when the built-in Administrator (RID 500) or Guest (RID 501) accounts are enabled.
+
+logsource:
+product: windows
+service: security
+detection:
+  selection:
+    EventID: 4722
+    TargetUserSidlcontains:
+      - "-500"
+      - "-501"
+  condition: selection
+fields:
+- EventID
+- TargetUserName
+TargetUserSid
+falsepositives:
+- Legitimate administrative action during troubleshooting
+level: critical
