@@ -1,0 +1,30 @@
+title: PsShutdown Execution and Service Creation Outside Maintenance Window
+
+description: >
+  Detects PsShutdown execution and/or service creation which may indicate
+  malicious system shutdown activity when observed outside approved
+  maintenance windows.
+
+references:
+  - https://learn.microsoft.com/en-us/sysinternals/downloads/psshutdown
+  - https://attack.mitre.org/techniques/T1489/
+logsource:
+  product: windows
+
+detection:
+  service:
+    EventID: 7045
+    ServiceName: PsShutdownSvc
+
+  process:
+    Image|endswith: '\psshutdown.exe'
+
+  condition: service or process
+
+falsepositives:
+  - IT administrators performing remote shutdown
+level: medium
+
+tags:
+  - attack.impact
+  - attack.t1489
