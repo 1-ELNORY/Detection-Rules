@@ -1,0 +1,34 @@
+Title: Human-Operated Ransomware Impact via PsExec and PsShutdown
+
+Description: >
+  Detects a correlated sequence of PsExec service creation followed by PsShutdown
+  service creation within a short timeframe, commonly observed during the impact
+  phase of human-operated ransomware attacks.
+
+references:
+  - https://www.mandiant.com/resources/blog/ransomware-attack-lifecycle
+  - https://www.crowdstrike.com/blog/big-game-hunting-with-ryuk-ransomware/
+  - https://attack.mitre.org/techniques/T1489/
+logsource:
+  product: windows
+
+detection:
+  psexec_service:
+    EventID: 7045
+    ServiceName|contains: 'PSEXESVC'
+
+  psshutdown_service:
+    EventID: 7045
+    ServiceName: PsShutdownSvc
+
+  condition: psexec_service followed_by psshutdown_service within 5m
+
+falsepositives:
+  - Approved IT maintenance using Sysinternals
+level: high
+
+tags:
+  - attack.impact
+  - attack.t1489
+  - attack.t1569.002
+  - attack.t1021
