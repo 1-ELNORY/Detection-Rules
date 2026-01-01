@@ -1,0 +1,82 @@
+# 1- Unusual TGT Lifetime
+# Golden Tickets often exceed the default 10-hour Kerberos TGT lifetime, set to years by attackers.
+# Monitor Event ID 4769 (A Kerberos service ticket was requested TGS request using TGT) for tickets where EndTime minus StartTime surpasses domain policy (e.g., >10 hours).
+
+title: Golden Ticket - Unusual TGT Lifetime
+
+description: Detects Kerberos TGTs (4768) with lifetimes exceeding 10 hours (adjust threshold to domain policy).
+logsource:
+  product: windows
+  service: security
+detection:
+  selection:
+    EventID: 4768
+    TicketOptions: 0x40810000   # Forwardable, renewable
+  lifetime_suspicious:
+    TicketEndTime|timeframe: ">10h"
+  condition: selection and lifetime_suspicious
+tags:
+  - attack.persistence
+  - attack.t1558.001
+level: high
+
+############################
+# for time part above:
+
+- On Windows clients (workstations/servers):  
+You won’t see the full TGT lifetime fields. Clients only store the ticket in memory (LSASS) and use it, but they don’t log the issuance details.
+
+- On Domain Controllers:  
+    The Security event log records Event ID 4768 with all the Kerberos ticket metadata:
+
+    StartTime → when the TGT becomes valid
+
+    EndTime → when it expires
+
+    RenewUntil → max renewal time
+
+    TimeSkew → allowed clock skew
+
+    EncodedTicket → ticket blob size
+
+How to get them into ELK:
+
+Configure Winlogbeat / Elastic Agent on your Domain Controllers (not just endpoints).
+
+Collect Security logs with Event ID 4768.
+
+Parse the event_data fields (StartTime, EndTime, etc.) into Elasticsearch.
+
+Map them as date fields so you can calculate lifetimes (EndTime - StartTime).
+
+###########################
+
+-------------------------------------------------------
+
+
+# 2- TGT Without AS-REQ
+# Legitimate TGTs follow AS-REQ/AS-REP (Event ID 4768); Golden Tickets skip this, appearing only in TGS-REQ (4769).
+
+title: Golden Ticket - TGT No Preceding AS-REQ
+
+description: Detects TGS requests (4769) without prior AS-REQ/REP (4768).
+logsource:
+  product: windows
+  service: security
+
+detection:
+  tgt_usage:
+    EventID: 4769 [Kerberos service ticket (TGS) is requested]
+    ServiceName|contains: 'krbtgt/'
+  as_req:
+    EventID: 4768 [Kerberos authentication ticket (TGT) is requested]
+
+  condition: tgt_usage and not as_req within 60m
+tags:
+  - attack.credential_access
+  - attack.t1558
+level: high
+
+
+
+
