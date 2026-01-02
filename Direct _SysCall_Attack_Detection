@@ -1,0 +1,56 @@
+title: Direct Syscall Execution via Unbacked CallTrace
+
+description:
+  Detects suspicious process access where Sysmon CallTrace does not
+  originate from standard Windows API or syscall libraries, indicating
+  manual syscall execution or shellcode-based EDR bypass.
+
+logsource:
+  product: windows
+  service: sysmon
+
+detection:
+  selection:
+    EventID: 10
+    CallTrace|contains: '\'
+    GrantedAccess|contains:
+      - '0x1fffff'
+      - '0x143a'
+      - '0x1410'
+
+  filter_standard_syscall_paths:
+    CallTrace|startswith:
+      - 'C:\Windows\System32\kernel32.dll'
+      - 'C:\Windows\System32\kernelbase.dll'
+      - 'C:\Windows\System32\ntdll.dll'
+      - 'C:\Windows\SysWOW64\ntdll.dll'
+      - 'C:\Windows\System32\win32u.dll'
+      - 'C:\Windows\System32\wow64cpu.dll'
+      - 'C:\Windows\System32\wow64win.dll'
+
+  filter_legitimate_tools:
+    SourceImage:
+      - 'C:\Windows\System32\taskmgr.exe'
+      - 'C:\Windows\System32\procexp.exe'
+      - 'C:\Windows\System32\procexp64.exe'
+
+  condition: selection
+             and not filter_standard_syscall_paths
+             and not filter_legitimate_tools
+
+falsepositives: 
+	- Anti-cheat engines 
+	- DRM-protected software 
+	- Advanced security tooling 
+	- Memory forensic tools 
+	- Virtualization or sandbox monitoring agents
+
+level: high
+
+tags:
+  - attack.defense_evasion
+  - attack.execution
+  - attack.credential_access
+  - attack.t1055
+  - attack.t1620
+  - attack.t1003
